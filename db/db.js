@@ -1,50 +1,42 @@
-const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
+// In-memory database: every table keeps its rows in a Map keyed by id.
+// Nothing is written to disk, so a restart (or redeploy) resets all data.
+class InMemoryTable {
+  constructor() {
+    this.rows = new Map();
+    this.nextId = 1;
+  }
 
-// Vercel's application directory is read-only; demo data lives in temporary storage.
-const DB_PATH = process.env.VERCEL
-  ? "/tmp/todos.db"
-  : path.join(__dirname, "..", "todos.db");
-const db = new sqlite3.Database(DB_PATH);
+  all() {
+    return [...this.rows.values()];
+  }
 
-db.serialize(() => {
-  db.run(
-    `CREATE TABLE IF NOT EXISTS todos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      completed INTEGER NOT NULL DEFAULT 0,
-      createdAt TEXT NOT NULL
-    )`
-  );
-});
+  get(id) {
+    return this.rows.get(id);
+  }
 
-const runAsync = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) return reject(err);
-      resolve(this);
-    });
-  });
+  insert(values) {
+    const id = this.nextId++;
+    const row = { ...values, id };
+    this.rows.set(id, row);
+    return row;
+  }
 
-const getAsync = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) return reject(err);
-      resolve(row);
-    });
-  });
+  update(id, values) {
+    const existing = this.rows.get(id);
+    if (!existing) return null;
 
-const allAsync = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows);
-    });
-  });
+    const row = { ...existing, ...values, id };
+    this.rows.set(id, row);
+    return row;
+  }
 
-module.exports = {
-  db,
-  runAsync,
-  getAsync,
-  allAsync,
+  delete(id) {
+    return this.rows.delete(id);
+  }
+}
+
+const db = {
+  todos: new InMemoryTable(),
 };
+
+module.exports = db;

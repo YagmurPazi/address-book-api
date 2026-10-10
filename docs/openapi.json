@@ -3,7 +3,7 @@
   "info": {
     "title": "Todo API",
     "version": "1.0.0",
-    "description": "Simple SQLite-backed Todo API"
+    "description": "Simple Todo API with an in-memory database"
   },
   "servers": [
     {

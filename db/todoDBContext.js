@@ -1,45 +1,47 @@
-const { runAsync, getAsync, allAsync } = require("./db");
+const db = require("./db");
 const Todo = require("../domain/Todo");
 
 const listTodos = async (completed) => {
-  let query = "SELECT * FROM todos";
-  const params = [];
+  let rows = db.todos.all();
 
   if (completed === "true") {
-    query += " WHERE completed = 1";
+    rows = rows.filter((row) => row.completed);
   } else if (completed === "false") {
-    query += " WHERE completed = 0";
+    rows = rows.filter((row) => !row.completed);
   }
 
-  const rows = await allAsync(query, params);
   return rows.map(Todo.fromRow);
 };
 
-const getTodoById = async (id) => {
-  const row = await getAsync("SELECT * FROM todos WHERE id = ?", [id]);
-  return Todo.fromRow(row);
-};
+const getTodoById = async (id) => Todo.fromRow(db.todos.get(id));
 
+// Case-insensitive "contains" match, like SQL's LIKE '%term%'
 const searchTodos = async (term) => {
-  const rows = await allAsync("SELECT * FROM todos WHERE title LIKE ?", [`%${term}%`]);
+  const needle = term.toLowerCase();
+  const rows = db.todos.all().filter((row) => row.title.toLowerCase().includes(needle));
   return rows.map(Todo.fromRow);
 };
 
-const insertTodo = async (todo) =>
-  runAsync("INSERT INTO todos (title, completed, createdAt) VALUES (?, ?, ?)", [
-    todo.title,
-    todo.completed ? 1 : 0,
-    todo.createdAt,
-  ]);
+// Insert/update/delete return { lastID } / { changes } like the old SQLite helpers,
+// so TodoService did not need to change.
+const insertTodo = async (todo) => {
+  const row = db.todos.insert(todo.toDbValues());
+  return { lastID: row.id };
+};
 
-const updateTodo = async (id, todo) =>
-  runAsync("UPDATE todos SET title = ?, completed = ? WHERE id = ?", [
-    todo.title,
-    todo.completed ? 1 : 0,
-    id,
-  ]);
+const updateTodo = async (id, todo) => {
+  const { title, completed } = todo.toDbValues();
+  const row = db.todos.update(id, { title, completed });
+  return { changes: row ? 1 : 0 };
+};
 
-const deleteTodo = async (id) => runAsync("DELETE FROM todos WHERE id = ?", [id]);
+const deleteTodo = async (id) => ({ changes: db.todos.delete(id) ? 1 : 0 });
+
+// Seed data so the API has something to show right after a (re)start
+[
+  new Todo({ title: "Buy milk", completed: true, createdAt: new Date().toISOString() }),
+  new Todo({ title: "Call mom", completed: false, createdAt: new Date().toISOString() }),
+].forEach(insertTodo);
 
 module.exports = {
   listTodos,
