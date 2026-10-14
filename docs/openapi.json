@@ -311,6 +311,39 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/contacts/{id}/favorite": {
+      "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
+      "put": {
+        "tags": ["Contacts"],
+        "summary": "Mark a contact as favorite",
+        "description": "Sets isFavorite to true. Idempotent: calling it on a favorite changes nothing. No request body.",
+        "responses": {
+          "200": {
+            "description": "The updated contact",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Contacts"],
+        "summary": "Unmark a contact as favorite",
+        "description": "Sets isFavorite to false. Only the favorite mark is removed; the contact itself is not deleted. Idempotent.",
+        "responses": {
+          "200": {
+            "description": "The updated contact",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
     }
   }
 }

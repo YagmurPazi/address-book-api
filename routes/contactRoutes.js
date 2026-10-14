@@ -82,4 +82,24 @@ router.delete("/:id", async (req, res) => {
   res.json({ message: "Contact deleted", contact: ContactDto.fromDomain(deleted) });
 });
 
+/**
+ * PUT /contacts/:id/favorite
+ * Marks the contact as favorite. Idempotent: calling it again changes nothing.
+ */
+router.put("/:id/favorite", async (req, res) => {
+  const updated = await contactService.setFavorite(parseId(req), true);
+  if (!updated) return sendNotFound(res);
+  res.json(ContactDto.fromDomain(updated));
+});
+
+/**
+ * DELETE /contacts/:id/favorite
+ * Removes the contact from favorites. Idempotent as well.
+ */
+router.delete("/:id/favorite", async (req, res) => {
+  const updated = await contactService.setFavorite(parseId(req), false);
+  if (!updated) return sendNotFound(res);
+  res.json(ContactDto.fromDomain(updated));
+});
+
 module.exports = router;

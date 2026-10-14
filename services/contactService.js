@@ -53,6 +53,11 @@ class ContactService {
     return contactDBContext.updateContact(id, contact);
   }
 
+  // Favorite is just a partial update of one field, so reuse update()
+  async setFavorite(id, isFavorite) {
+    return this.update(id, { isFavorite });
+  }
+
   async delete(id) {
     const existing = await contactDBContext.getContactById(id);
     if (!existing) return null;
