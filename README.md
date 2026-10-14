@@ -1,250 +1,119 @@
-# apiNode
+# Address Book API
 
-A simple RESTful API built with Node.js, Express, and SQLite.
+SE 4458 – Assignment 2 (Group 1: Address Book) · Yağmur Pazı
 
-This project provides backend functionality with CRUD endpoints using a lightweight SQLite database. It is designed for learning, testing, and small applications without requiring an external database server.
+A REST API for an address book: create, edit, update, delete, search, sort and favorite contacts.
+There is no frontend; the API is documented and can be tried out with Swagger UI.
 
----
+| | Link |
+|---|---|
+| Source code | https://github.com/YagmurPazi/address-book-api |
+| Live API (Swagger UI) | https://address-book-api-xabr.onrender.com/api-docs |
 
-## Features
+> The live API runs on Render's free plan. After 15 minutes without traffic the service sleeps:
+> the first request then takes about a minute and the data is reset to the demo contacts.
 
-- REST API with Express
-- SQLite database (file-based, no server required)
-- CRUD operations
-- JSON request/response handling
-- Easy local setup
-- Lightweight and portable
+## Quick start
 
----
+Requires Node.js 20 or newer.
 
-## Tech Stack
-
-- Node.js
-- Express
-- SQLite
-- JavaScript (ES6+)
-- nodemon (dev)
-
----
-
-## Why SQLite?
-
-This project uses SQLite for simplicity:
-
-- No database server needed
-- No installation required
-- Single file database
-- Perfect for development and demos
-
-The database is stored locally as:
-
-```
-database.sqlite
-```
-
-(or similar file inside the project)
-
----
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── controllers/
-│   ├── routes/
-│   ├── db/              # SQLite connection/config
-│   ├── models/
-│   └── index.js
-├── database.sqlite
-├── package.json
-└── README.md
-```
-
----
-
-## Prerequisites
-
-Install:
-
-- Node.js 18+
-- npm or yarn
-
-Check:
-
-```
-node -v
-```
-
----
-
-## Getting Started
-
-### Clone
-
-```
-git clone https://github.com/southriver/apiNode.git
-cd apiNode
-```
-
-### Install dependencies
-
-```
+```bash
 npm install
+npm run dev        # or: npm start
 ```
 
-### Run server
+Then open http://localhost:3000/api-docs.
 
-Development:
+## Endpoints
 
-```
-npm run dev
-```
+| Method | Path | Description |
+|---|---|---|
+| GET | `/contacts` | List contacts with search, filters, sorting and paging |
+| GET | `/contacts/{id}` | Get one contact |
+| POST | `/contacts` | Create a contact |
+| PUT | `/contacts/{id}` | Replace a contact (all fields) |
+| PATCH | `/contacts/{id}` | Edit some fields of a contact |
+| DELETE | `/contacts/{id}` | Delete a contact |
+| PUT | `/contacts/{id}/favorite` | Mark as favorite |
+| DELETE | `/contacts/{id}/favorite` | Remove from favorites (the contact is kept) |
 
-Production:
+`GET /contacts` query parameters, all optional and combinable:
 
-```
-npm start
-```
+| Parameter | Values | Default |
+|---|---|---|
+| `search` | Words looked up in name, email and tags | – |
+| `tag` | A tag, e.g. `Work` | – |
+| `favorite` | `true` / `false` | – |
+| `sortBy` | `firstName`, `lastName`, `email`, `createdAt` | `firstName` |
+| `order` | `asc` / `desc` | `asc` |
+| `page` | 1, 2, … | `1` |
+| `pageSize` | 1–100 | `10` |
 
-Server runs at:
+### Status codes
 
-```
-http://localhost:3000
-```
+| Code | When |
+|---|---|
+| 200 | Success |
+| 201 | Contact created |
+| 400 | Invalid body, query parameter, id or JSON |
+| 404 | No contact with that id |
+| 409 | The email is already used by another contact |
 
----
+## Design
 
-## API Endpoints
+The project started from the course's to-do template ([southriver/apiNode](https://github.com/southriver/apiNode))
+and keeps its layered structure. Todo was replaced by Contact and the SQLite layer by an in-memory store.
 
-| Method | Route | Description |
-|--------|---------|-------------|
-| GET | /api/items | Get all items |
-| GET | /api/items/:id | Get item by id |
-| POST | /api/items | Create new item |
-| PUT | /api/items/:id | Update item |
-| DELETE | /api/items/:id | Delete item |
+**Stack:** Node.js, Express 5, swagger-ui-express with an OpenAPI 3.0 document written by hand
+(`docs/openapi.json`), nodemon for development. Hosted on Render.
 
----
+**Data model:** a contact has `firstName`, `lastName`, `email`, `phone`, `tags` and `isFavorite`,
+plus `id`, `createdAt` and `updatedAt`, which are set by the server.
 
-## Example Request
+| Folder | Responsibility |
+|---|---|
+| `routes/` | HTTP endpoints: read the request, call the service, send the response |
+| `dto/` | Validate and normalize request bodies and query strings; shape responses |
+| `services/` | Business rules: unique email (409), PUT vs PATCH, favorites, filter/sort/page |
+| `domain/` | The `Contact` model |
+| `db/` | In-memory database (`InMemoryTable` keeps rows in a `Map`) and the 24 demo contacts |
+| `utils/` | Text helpers for Turkish/English search and sorting |
+| `docs/` | OpenAPI document served by Swagger UI |
 
-Create item:
+- **Central error handling:** Express 5 forwards errors thrown in async handlers to one error handler in
+  `index.js`, which turns them into JSON responses (400, 409, 500). Routes need no try/catch.
+- **Storage behind one file:** services reach the data only through `db/contactDBContext.js`, so a real
+  database could replace the in-memory store by rewriting that file, without changing services or routes.
 
-```
-curl -X POST http://localhost:3000/api/items \
--H "Content-Type: application/json" \
--d '{"name":"Test item"}'
-```
+## Assumptions
 
----
+- **One shared address book, no authentication.** Everyone who calls the API sees the same contacts.
+- **In-memory data.** Every restart, redeploy or sleep of the server resets the data to 24 made-up demo contacts.
+- **Required fields:** only `firstName` and `lastName`.
+- **Email is unique** (case-insensitive); phone numbers are not.
+- **PUT replaces** the whole contact (optional fields left out are reset); **PATCH changes** only the fields that are sent.
+- **Favorites** have their own endpoints (`PUT` / `DELETE /contacts/{id}/favorite`); `isFavorite` can also be set with POST, PUT or PATCH.
+- **Search** looks in name, email and tags; every word must match. Search and the tag filter ignore case and Turkish letters (`yilmaz` finds Yılmaz).
+- **Sorting** follows the Turkish alphabet (C < Ç < D).
 
-## Database Notes
+## Issues encountered
 
-- SQLite file is created automatically on first run
-- No setup required
-- To reset data, simply delete the `.sqlite` file
+1. **The template did not install on Node.js 26.** `npm install` failed while building `better-sqlite3`, which had
+   no prebuilt binary for Node 26. The package was only used by an old, unused file, so both were removed;
+   switching to the in-memory store later removed the other native package (`sqlite3`) too.
+2. **Choosing a host for in-memory data.** On serverless platforms such as Vercel, requests can reach different
+   instances that do not share memory, so new data could seem to disappear. Render runs one long-lived process;
+   the trade-off is the free plan's sleep.
+3. **Turkish letters in search.** `"İ".toLowerCase()` adds an invisible dot, so `ipek` did not match `İpek`, and
+   `toLocaleLowerCase("tr")` turns the `I` in `EMILY` into `ı`. Both sides are now normalized the same way:
+   accents removed, lower-cased, `ı` → `i` (`utils/text.js`).
+4. **Turkish letters in sorting.** A plain string comparison puts names starting with Ç, Ö, Ş or Ü after Z;
+   `Intl.Collator("tr")` sorts them in alphabet order.
+5. **Non-ASCII characters in demo emails.** Two demo emails were first written with the Turkish `ı`.
+   Lower-casing `MUSTAFA.YILMAZ@…` gives `mustafa.yilmaz@…` with a dotted i, which did not match the stored
+   `mustafa.yılmaz@…`, so the duplicate-email check could be bypassed. The demo data now uses ASCII emails.
 
----
+## Testing
 
-## Development
-
-Optional:
-
-```
-npm install -g nodemon
-npm run dev
-```
-
----
-
-## Docker (Optional)
-
-```
-FROM node:18
-WORKDIR /app
-COPY . .
-RUN npm install
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
----
-
-## Contributing
-
-1. Fork
-2. Create branch
-3. Commit
-4. Open PR
-
----
-
-## License
-
-MIT
-
----
-
-## Deploy to AWS App Runner (via ECR)
-
-This repository now includes a production `Dockerfile` for App Runner.
-
-### 1) Set variables
-
-```bash
-AWS_REGION=ca-central-1
-AWS_ACCOUNT_ID=<your-account-id>
-APP_NAME=apinode
-IMAGE_TAG=latest
-```
-
-### 2) Create ECR repository (one-time)
-
-```bash
-aws ecr create-repository --repository-name $APP_NAME --region $AWS_REGION
-```
-
-### 3) Login, build, and push image
-
-```bash
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-docker build -t $APP_NAME:$IMAGE_TAG .
-docker tag $APP_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME:$IMAGE_TAG
-docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME:$IMAGE_TAG
-```
-
-### 4) Create App Runner service
-
-```bash
-aws apprunner create-service \
-  --service-name $APP_NAME \
-  --source-configuration '{
-    "ImageRepository": {
-      "ImageIdentifier": "'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$APP_NAME"':'"$IMAGE_TAG"'",
-      "ImageRepositoryType": "ECR",
-      "ImageConfiguration": {
-        "Port": "8080",
-        "RuntimeEnvironmentVariables": {
-          "PORT": "8080",
-          "NODE_ENV": "production"
-        }
-      }
-    },
-    "AutoDeploymentsEnabled": true
-  }' \
-  --region $AWS_REGION
-```
-
-### 5) Verify
-
-- Open the `ServiceUrl` from create-service output.
-- Test:
-  - `/`
-  - `/api-docs`
-  - `/openapi.json`
-
-### Important note about SQLite
-
-`todos.db` is local file storage. App Runner filesystem is ephemeral, so data can reset on redeploy/restart. For persistent production data, move to RDS (PostgreSQL/MySQL).
+The API was tested manually through Swagger UI and `curl`, locally and on the live deployment: all endpoints,
+error cases (400, 404, 409), Turkish/English search, filters, sorting and paging.
