@@ -2,7 +2,7 @@
 // - Emails use example.com, which is reserved for documentation.
 // - Phones use fictional ranges: UK 020 7946 0xxx (Ofcom drama numbers), US 555-01xx,
 //   and an obviously fake +90 555 000 01xx pattern for Turkey.
-// - Some names start with Ç, İ, Ö, Ş or Ü and two people share the last name Yılmaz,
+// - Some names start with Ç, İ, Ö, Ş or Ü and three people share the last name Yılmaz,
 //   so Turkish search and sorting by last name can be tested.
 const contacts = [
   [
@@ -40,7 +40,7 @@ const contacts = [
   [
     "Zeynep",
     "Yılmaz",
-    "zeynep.yılmaz@example.com",
+    "zeynep.yilmaz@example.com",
     "+90 555 000 0105",
     ["University", "Friends"],
     true,
@@ -81,7 +81,7 @@ const contacts = [
   [
     "Mustafa",
     "Yılmaz",
-    "mustafa.yılmaz@example.com",
+    "mustafa.yilmaz@example.com",
     "+90 555 000 0111",
     ["Family"],
     true,
