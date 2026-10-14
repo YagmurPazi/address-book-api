@@ -1,244 +1,314 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.0.3",
   "info": {
-    "title": "Todo API",
+    "title": "Address Book API",
     "version": "1.0.0",
-    "description": "Simple Todo API with an in-memory database"
+    "description": "REST API for an address book (SE 4458 Assignment 2, Group 1).\n\nData is kept in an in-memory database: every restart or redeploy resets it to 24 demo contacts."
   },
   "servers": [
     {
       "url": "/"
     }
   ],
+  "tags": [
+    {
+      "name": "Contacts",
+      "description": "Create, read, update and delete contacts"
+    }
+  ],
   "components": {
     "schemas": {
-      "TodoDto": {
+      "Contact": {
         "type": "object",
         "properties": {
           "id": { "type": "integer", "example": 1 },
-          "title": { "type": "string", "example": "Buy milk" },
-          "completed": { "type": "boolean", "example": false }
+          "firstName": { "type": "string", "example": "Ayşe" },
+          "lastName": { "type": "string", "example": "Yılmaz" },
+          "email": { "type": "string", "format": "email", "nullable": true, "example": "ayse.yilmaz@example.com" },
+          "phone": { "type": "string", "nullable": true, "example": "+90 555 000 0101" },
+          "tags": { "type": "array", "items": { "type": "string" }, "example": ["Family"] },
+          "isFavorite": { "type": "boolean", "example": true },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2026-10-01T09:00:00.000Z" },
+          "updatedAt": { "type": "string", "format": "date-time", "example": "2026-10-01T09:00:00.000Z" }
         },
-        "required": ["id", "title", "completed"]
+        "required": ["id", "firstName", "lastName", "email", "phone", "tags", "isFavorite", "createdAt", "updatedAt"]
       },
-      "CreateTodoDto": {
+      "ContactInput": {
         "type": "object",
+        "description": "Body for POST and PUT. Optional fields that are left out get their default value. Unknown fields such as id or createdAt are ignored.",
         "properties": {
-          "title": { "type": "string", "example": "Buy milk" },
-          "completed": { "type": "boolean", "example": false }
+          "firstName": { "type": "string", "maxLength": 50, "example": "Ayşe" },
+          "lastName": { "type": "string", "maxLength": 50, "example": "Yılmaz" },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Stored lower-cased and must be unique. null or \"\" means no email. Default: null",
+            "example": "ayse.yilmaz@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "7-15 digits; may contain spaces, '+', '-', '.', '(' and ')'. null or \"\" means no phone. Default: null",
+            "example": "+90 555 000 0101"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string", "maxLength": 30 },
+            "maxItems": 10,
+            "description": "Trimmed and de-duplicated case-insensitively. Default: []",
+            "example": ["Work", "Friends"]
+          },
+          "isFavorite": { "type": "boolean", "description": "Default: false", "example": false }
         },
-        "required": ["title"]
+        "required": ["firstName", "lastName"]
       },
-      "UpdateTodoDto": {
+      "ContactPatch": {
         "type": "object",
+        "description": "Body for PATCH. Send only the fields you want to change (at least one). Same rules as ContactInput; tags replaces the whole list.",
+        "minProperties": 1,
         "properties": {
-          "title": { "type": "string", "example": "Buy milk" },
-          "completed": { "type": "boolean", "example": true }
-        },
-        "required": ["title", "completed"]
-      },
-      "PatchTodoDto": {
-        "type": "object",
-        "properties": {
-          "title": { "type": "string", "example": "Buy milk" },
-          "completed": { "type": "boolean", "example": true }
+          "firstName": { "type": "string", "maxLength": 50 },
+          "lastName": { "type": "string", "maxLength": 50 },
+          "email": { "type": "string", "format": "email", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string", "maxLength": 30 }, "maxItems": 10 },
+          "isFavorite": { "type": "boolean" }
         }
       },
-      "ErrorResponse": {
+      "DeleteContactResponse": {
         "type": "object",
         "properties": {
-          "error": { "type": "string", "example": "Todo not found" }
+          "message": { "type": "string", "example": "Contact deleted" },
+          "contact": { "$ref": "#/components/schemas/Contact" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Contact not found" }
         },
         "required": ["error"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Validation failed" },
+          "details": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["Field 'firstName' is required", "Field 'email' must be a valid email address"]
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {
+      "ContactId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Contact id",
+        "schema": { "type": "integer", "minimum": 1 },
+        "example": 1
+      }
+    },
+    "examples": {
+      "MinimalContact": {
+        "summary": "Only the required fields",
+        "value": { "firstName": "Ece", "lastName": "Güneş" }
+      },
+      "FullContact": {
+        "summary": "All fields",
+        "value": {
+          "firstName": "Ece",
+          "lastName": "Güneş",
+          "email": "ece.gunes@example.com",
+          "phone": "+90 555 000 0199",
+          "tags": ["Work", "Friends"],
+          "isFavorite": true
+        }
+      },
+      "DuplicateEmail": {
+        "summary": "Email already used by Ayşe Yılmaz (409)",
+        "value": { "firstName": "Ayşe", "lastName": "Yılmaz", "email": "Ayse.Yilmaz@example.com" }
+      },
+      "InvalidContact": {
+        "summary": "Invalid body to see validation errors (400)",
+        "value": { "firstName": "", "email": "not-an-email", "phone": "12", "tags": "Work", "isFavorite": "yes" }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid body, invalid id or malformed JSON",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ValidationError" } }
+        }
+      },
+      "NotFound": {
+        "description": "No contact with this id",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "Conflict": {
+        "description": "Another contact already uses this email",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" },
+            "example": { "error": "A contact with email 'ayse.yilmaz@example.com' already exists (id 1)" }
+          }
+        }
       }
     }
   },
   "paths": {
-    "/todos": {
+    "/contacts": {
       "get": {
-        "summary": "List todos",
-        "parameters": [
-          {
-            "name": "completed",
-            "in": "query",
-            "description": "Filter by completion status",
-            "schema": { "type": "string", "enum": ["true", "false"] }
-          }
-        ],
+        "tags": ["Contacts"],
+        "summary": "List all contacts",
         "responses": {
           "200": {
-            "description": "List of todos",
+            "description": "All contacts",
             "content": {
               "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TodoDto" } }
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" } }
               }
             }
           }
         }
       },
       "post": {
-        "summary": "Create a todo",
+        "tags": ["Contacts"],
+        "summary": "Create a contact",
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CreateTodoDto" } }
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactInput" },
+              "examples": {
+                "full": { "$ref": "#/components/examples/FullContact" },
+                "minimal": { "$ref": "#/components/examples/MinimalContact" },
+                "duplicateEmail": { "$ref": "#/components/examples/DuplicateEmail" },
+                "invalid": { "$ref": "#/components/examples/InvalidContact" }
+              }
+            }
           }
         },
         "responses": {
           "201": {
-            "description": "Todo created",
+            "description": "Contact created",
+            "headers": {
+              "Location": { "description": "URL of the new contact", "schema": { "type": "string", "example": "/contacts/25" } }
+            },
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/TodoDto" } }
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
             }
           },
-          "400": {
-            "description": "Invalid payload",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/Conflict" }
         }
       }
     },
-    "/todos/search": {
+    "/contacts/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
       "get": {
-        "summary": "Search todos by title keyword",
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": true,
-            "description": "Substring to match against todo titles",
-            "schema": { "type": "string" }
-          }
-        ],
+        "tags": ["Contacts"],
+        "summary": "Get a contact by id",
         "responses": {
           "200": {
-            "description": "Matching todos",
+            "description": "The contact",
             "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TodoDto" } }
-              }
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
             }
           },
-          "400": {
-            "description": "Missing or invalid keyword",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
-        }
-      }
-    },
-    "/todos/{id}": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": { "type": "integer" },
-          "description": "Todo identifier"
-        }
-      ],
-      "get": {
-        "summary": "Get a single todo",
-        "responses": {
-          "200": {
-            "description": "Todo found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/TodoDto" } }
-            }
-          },
-          "404": {
-            "description": "Todo not found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       },
       "put": {
-        "summary": "Replace a todo",
+        "tags": ["Contacts"],
+        "summary": "Replace a contact",
+        "description": "Replaces every editable field. Optional fields left out of the body are reset (email/phone to null, tags to [], isFavorite to false). id and createdAt never change.",
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateTodoDto" } }
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactInput" },
+              "examples": {
+                "full": { "$ref": "#/components/examples/FullContact" },
+                "minimal": { "$ref": "#/components/examples/MinimalContact" },
+                "invalid": { "$ref": "#/components/examples/InvalidContact" }
+              }
+            }
           }
         },
         "responses": {
           "200": {
-            "description": "Todo updated",
+            "description": "The replaced contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/TodoDto" } }
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
             }
           },
-          "400": {
-            "description": "Invalid payload",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          },
-          "404": {
-            "description": "Todo not found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
         }
       },
       "patch": {
-        "summary": "Partially update a todo",
+        "tags": ["Contacts"],
+        "summary": "Edit some fields of a contact",
+        "description": "Only the fields in the body change. Send null (or \"\") for email or phone to clear it.",
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/PatchTodoDto" } }
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactPatch" },
+              "examples": {
+                "changePhone": {
+                  "summary": "Change the phone number",
+                  "value": { "phone": "+90 555 000 0000" }
+                },
+                "editTags": {
+                  "summary": "Replace the tags",
+                  "value": { "tags": ["Family", "Friends"] }
+                },
+                "clearEmail": {
+                  "summary": "Remove the email",
+                  "value": { "email": null }
+                },
+                "empty": {
+                  "summary": "Empty body (400)",
+                  "value": {}
+                }
+              }
+            }
           }
         },
         "responses": {
           "200": {
-            "description": "Todo updated",
+            "description": "The updated contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/TodoDto" } }
+              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
             }
           },
-          "400": {
-            "description": "Invalid payload",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          },
-          "404": {
-            "description": "Todo not found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
         }
       },
       "delete": {
-        "summary": "Delete a todo",
+        "tags": ["Contacts"],
+        "summary": "Delete a contact",
         "responses": {
           "200": {
-            "description": "Todo deleted",
+            "description": "Contact deleted; the deleted contact is returned",
             "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "Todo deleted" },
-                    "todo": { "$ref": "#/components/schemas/TodoDto" }
-                  },
-                  "required": ["message", "todo"]
-                }
-              }
+              "application/json": { "schema": { "$ref": "#/components/schemas/DeleteContactResponse" } }
             }
           },
-          "404": {
-            "description": "Todo not found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
-            }
-          }
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     }

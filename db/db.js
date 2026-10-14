@@ -36,7 +36,7 @@ class InMemoryTable {
 }
 
 const db = {
-  todos: new InMemoryTable(),
+  contacts: new InMemoryTable(),
 };
 
 module.exports = db;
