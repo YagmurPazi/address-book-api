@@ -3,6 +3,7 @@ const ContactService = require("../services/contactService");
 const ContactDto = require("../dto/ContactDto");
 const CreateContactDto = require("../dto/CreateContactDto");
 const UpdateContactDto = require("../dto/UpdateContactDto");
+const ContactQueryDto = require("../dto/ContactQueryDto");
 const DtoValidationError = require("../dto/DtoValidationError");
 
 const router = express.Router();
@@ -24,10 +25,13 @@ const sendNotFound = (res) => res.status(404).json({ error: "Contact not found" 
 
 /**
  * GET /contacts
+ * Optional query: search, tag, favorite, sortBy, order, page, pageSize
+ * Returns one page: { items, total, page, pageSize, totalPages }
  */
 router.get("/", async (req, res) => {
-  const contacts = await contactService.list();
-  res.json(ContactDto.fromDomainList(contacts));
+  const contactQueryDto = ContactQueryDto.fromRequest(req.query);
+  const result = await contactService.list(contactQueryDto.toServiceInput());
+  res.json({ ...result, items: ContactDto.fromDomainList(result.items) });
 });
 
 /**

@@ -21,86 +21,229 @@
       "Contact": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer", "example": 1 },
-          "firstName": { "type": "string", "example": "Ayşe" },
-          "lastName": { "type": "string", "example": "Yılmaz" },
-          "email": { "type": "string", "format": "email", "nullable": true, "example": "ayse.yilmaz@example.com" },
-          "phone": { "type": "string", "nullable": true, "example": "+90 555 000 0101" },
-          "tags": { "type": "array", "items": { "type": "string" }, "example": ["Family"] },
-          "isFavorite": { "type": "boolean", "example": true },
-          "createdAt": { "type": "string", "format": "date-time", "example": "2026-10-01T09:00:00.000Z" },
-          "updatedAt": { "type": "string", "format": "date-time", "example": "2026-10-01T09:00:00.000Z" }
-        },
-        "required": ["id", "firstName", "lastName", "email", "phone", "tags", "isFavorite", "createdAt", "updatedAt"]
-      },
-      "ContactInput": {
-        "type": "object",
-        "description": "Body for POST and PUT. Optional fields that are left out get their default value. Unknown fields such as id or createdAt are ignored.",
-        "properties": {
-          "firstName": { "type": "string", "maxLength": 50, "example": "Ayşe" },
-          "lastName": { "type": "string", "maxLength": 50, "example": "Yılmaz" },
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Ayşe"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Yılmaz"
+          },
           "email": {
             "type": "string",
             "format": "email",
             "nullable": true,
-            "description": "Stored lower-cased and must be unique. null or \"\" means no email. Default: null",
             "example": "ayse.yilmaz@example.com"
           },
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "7-15 digits; may contain spaces, '+', '-', '.', '(' and ')'. null or \"\" means no phone. Default: null",
             "example": "+90 555 000 0101"
           },
           "tags": {
             "type": "array",
-            "items": { "type": "string", "maxLength": 30 },
-            "maxItems": 10,
-            "description": "Trimmed and de-duplicated case-insensitively. Default: []",
-            "example": ["Work", "Friends"]
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Family"
+            ]
           },
-          "isFavorite": { "type": "boolean", "description": "Default: false", "example": false }
+          "isFavorite": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T09:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T09:00:00.000Z"
+          }
         },
-        "required": ["firstName", "lastName"]
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "phone",
+          "tags",
+          "isFavorite",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ContactInput": {
+        "type": "object",
+        "description": "Only firstName and lastName are required.",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "Ayşe"
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "Yılmaz"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Must be unique (case-insensitive).",
+            "example": "ayse.yilmaz@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "7-15 digits",
+            "example": "+90 555 000 0101"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            },
+            "maxItems": 10,
+            "example": [
+              "Work",
+              "Friends"
+            ]
+          },
+          "isFavorite": {
+            "type": "boolean",
+            "example": false,
+            "default": false
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName"
+        ]
       },
       "ContactPatch": {
         "type": "object",
-        "description": "Body for PATCH. Send only the fields you want to change (at least one). Same rules as ContactInput; tags replaces the whole list.",
+        "description": "Send only the fields to change.",
         "minProperties": 1,
         "properties": {
-          "firstName": { "type": "string", "maxLength": 50 },
-          "lastName": { "type": "string", "maxLength": 50 },
-          "email": { "type": "string", "format": "email", "nullable": true },
-          "phone": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string", "maxLength": 30 }, "maxItems": 10 },
-          "isFavorite": { "type": "boolean" }
+          "firstName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            },
+            "maxItems": 10
+          },
+          "isFavorite": {
+            "type": "boolean"
+          }
         }
+      },
+      "ContactPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "example": 24
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "example": 10
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "totalPages"
+        ]
       },
       "DeleteContactResponse": {
         "type": "object",
         "properties": {
-          "message": { "type": "string", "example": "Contact deleted" },
-          "contact": { "$ref": "#/components/schemas/Contact" }
+          "message": {
+            "type": "string",
+            "example": "Contact deleted"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "string", "example": "Contact not found" }
+          "error": {
+            "type": "string",
+            "example": "Contact not found"
+          }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       },
       "ValidationError": {
         "type": "object",
         "properties": {
-          "error": { "type": "string", "example": "Validation failed" },
+          "error": {
+            "type": "string",
+            "example": "Validation failed"
+          },
           "details": {
             "type": "array",
-            "items": { "type": "string" },
-            "example": ["Field 'firstName' is required", "Field 'email' must be a valid email address"]
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Field 'firstName' is required",
+              "Field 'email' must be a valid email address"
+            ]
           }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       }
     },
     "parameters": {
@@ -109,14 +252,20 @@
         "in": "path",
         "required": true,
         "description": "Contact id",
-        "schema": { "type": "integer", "minimum": 1 },
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
         "example": 1
       }
     },
     "examples": {
       "MinimalContact": {
         "summary": "Only the required fields",
-        "value": { "firstName": "Ece", "lastName": "Güneş" }
+        "value": {
+          "firstName": "Ece",
+          "lastName": "Güneş"
+        }
       },
       "FullContact": {
         "summary": "All fields",
@@ -125,38 +274,63 @@
           "lastName": "Güneş",
           "email": "ece.gunes@example.com",
           "phone": "+90 555 000 0199",
-          "tags": ["Work", "Friends"],
+          "tags": [
+            "Work",
+            "Friends"
+          ],
           "isFavorite": true
         }
       },
       "DuplicateEmail": {
         "summary": "Email already used by Ayşe Yılmaz (409)",
-        "value": { "firstName": "Ayşe", "lastName": "Yılmaz", "email": "Ayse.Yilmaz@example.com" }
+        "value": {
+          "firstName": "Ayşe",
+          "lastName": "Yılmaz",
+          "email": "Ayse.Yilmaz@example.com"
+        }
       },
       "InvalidContact": {
         "summary": "Invalid body to see validation errors (400)",
-        "value": { "firstName": "", "email": "not-an-email", "phone": "12", "tags": "Work", "isFavorite": "yes" }
+        "value": {
+          "firstName": "",
+          "email": "not-an-email",
+          "phone": "12",
+          "tags": "Work",
+          "isFavorite": "yes"
+        }
       }
     },
     "responses": {
       "BadRequest": {
         "description": "Invalid body, invalid id or malformed JSON",
         "content": {
-          "application/json": { "schema": { "$ref": "#/components/schemas/ValidationError" } }
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
         }
       },
       "NotFound": {
         "description": "No contact with this id",
         "content": {
-          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
         }
       },
       "Conflict": {
         "description": "Another contact already uses this email",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": "A contact with email 'ayse.yilmaz@example.com' already exists (id 1)" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "A contact with email 'ayse.yilmaz@example.com' already exists (id 1)"
+            }
           }
         }
       }
@@ -165,32 +339,136 @@
   "paths": {
     "/contacts": {
       "get": {
-        "tags": ["Contacts"],
-        "summary": "List all contacts",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "List, search, filter, sort and page contacts",
+        "description": "Search and tag ignore case and Turkish letters: `yilmaz` finds Yılmaz.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Name, email or tag. Every word must match.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "favorite",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "firstName",
+                "lastName",
+                "email",
+                "createdAt"
+              ],
+              "default": "firstName"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Max 100",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "All contacts",
+            "description": "One page of matching contacts",
             "content": {
               "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" } }
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "example": {
+                  "error": "Invalid query parameters",
+                  "details": [
+                    "Query parameter 'sortBy' must be one of: firstName, lastName, email, createdAt"
+                  ]
+                }
               }
             }
           }
         }
       },
       "post": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Create a contact",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ContactInput" },
+              "schema": {
+                "$ref": "#/components/schemas/ContactInput"
+              },
               "examples": {
-                "full": { "$ref": "#/components/examples/FullContact" },
-                "minimal": { "$ref": "#/components/examples/MinimalContact" },
-                "duplicateEmail": { "$ref": "#/components/examples/DuplicateEmail" },
-                "invalid": { "$ref": "#/components/examples/InvalidContact" }
+                "full": {
+                  "$ref": "#/components/examples/FullContact"
+                },
+                "minimal": {
+                  "$ref": "#/components/examples/MinimalContact"
+                },
+                "duplicateEmail": {
+                  "$ref": "#/components/examples/DuplicateEmail"
+                },
+                "invalid": {
+                  "$ref": "#/components/examples/InvalidContact"
+                }
               }
             }
           }
@@ -199,46 +477,84 @@
           "201": {
             "description": "Contact created",
             "headers": {
-              "Location": { "description": "URL of the new contact", "schema": { "type": "string", "example": "/contacts/25" } }
+              "Location": {
+                "description": "URL of the new contact",
+                "schema": {
+                  "type": "string",
+                  "example": "/contacts/25"
+                }
+              }
             },
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "409": { "$ref": "#/components/responses/Conflict" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
         }
       }
     },
     "/contacts/{id}": {
-      "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ContactId"
+        }
+      ],
       "get": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Get a contact by id",
         "responses": {
           "200": {
             "description": "The contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       },
       "put": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Replace a contact",
-        "description": "Replaces every editable field. Optional fields left out of the body are reset (email/phone to null, tags to [], isFavorite to false). id and createdAt never change.",
+        "description": "Replaces the whole contact; optional fields left out are reset.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ContactInput" },
+              "schema": {
+                "$ref": "#/components/schemas/ContactInput"
+              },
               "examples": {
-                "full": { "$ref": "#/components/examples/FullContact" },
-                "minimal": { "$ref": "#/components/examples/MinimalContact" },
-                "invalid": { "$ref": "#/components/examples/InvalidContact" }
+                "full": {
+                  "$ref": "#/components/examples/FullContact"
+                },
+                "minimal": {
+                  "$ref": "#/components/examples/MinimalContact"
+                },
+                "invalid": {
+                  "$ref": "#/components/examples/InvalidContact"
+                }
               }
             }
           }
@@ -247,35 +563,58 @@
           "200": {
             "description": "The replaced contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
         }
       },
       "patch": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Edit some fields of a contact",
-        "description": "Only the fields in the body change. Send null (or \"\") for email or phone to clear it.",
+        "description": "Only the sent fields change. null clears email or phone.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ContactPatch" },
+              "schema": {
+                "$ref": "#/components/schemas/ContactPatch"
+              },
               "examples": {
                 "changePhone": {
                   "summary": "Change the phone number",
-                  "value": { "phone": "+90 555 000 0000" }
+                  "value": {
+                    "phone": "+90 555 000 0000"
+                  }
                 },
                 "editTags": {
                   "summary": "Replace the tags",
-                  "value": { "tags": ["Family", "Friends"] }
+                  "value": {
+                    "tags": [
+                      "Family",
+                      "Friends"
+                    ]
+                  }
                 },
                 "clearEmail": {
                   "summary": "Remove the email",
-                  "value": { "email": null }
+                  "value": {
+                    "email": null
+                  }
                 },
                 "empty": {
                   "summary": "Empty body (400)",
@@ -289,59 +628,102 @@
           "200": {
             "description": "The updated contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
         }
       },
       "delete": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Delete a contact",
         "responses": {
           "200": {
             "description": "Contact deleted; the deleted contact is returned",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/DeleteContactResponse" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteContactResponse"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       }
     },
     "/contacts/{id}/favorite": {
-      "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ContactId"
+        }
+      ],
       "put": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Mark a contact as favorite",
-        "description": "Sets isFavorite to true. Idempotent: calling it on a favorite changes nothing. No request body.",
         "responses": {
           "200": {
             "description": "The updated contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       },
       "delete": {
-        "tags": ["Contacts"],
+        "tags": [
+          "Contacts"
+        ],
         "summary": "Unmark a contact as favorite",
-        "description": "Sets isFavorite to false. Only the favorite mark is removed; the contact itself is not deleted. Idempotent.",
+        "description": "Removes only the favorite mark; the contact is not deleted.",
         "responses": {
           "200": {
             "description": "The updated contact",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       }
     }

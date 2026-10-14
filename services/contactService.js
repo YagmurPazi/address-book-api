@@ -1,10 +1,14 @@
 const contactDBContext = require("../db/contactDBContext");
 const Contact = require("../domain/Contact");
 const ConflictError = require("./ConflictError");
+const { filterContacts, sortContacts, paginate } = require("./contactListing");
 
 class ContactService {
-  async list() {
-    return contactDBContext.listContacts();
+  // Filter, then sort, then cut out the requested page
+  async list({ search, tag, favorite, sortBy, order, page, pageSize }) {
+    const contacts = await contactDBContext.listContacts();
+    const matching = filterContacts(contacts, { search, tag, favorite });
+    return paginate(sortContacts(matching, sortBy, order), page, pageSize);
   }
 
   async get(id) {
